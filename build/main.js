@@ -99,6 +99,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var electron__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(electron__WEBPACK_IMPORTED_MODULE_0__);
 
 let mainWindow;
+electron__WEBPACK_IMPORTED_MODULE_0__["ipcMain"].on('url', (event, msg) => {
+});
 const createWindow = () => {
     mainWindow = new electron__WEBPACK_IMPORTED_MODULE_0__["BrowserWindow"]({
         height: 600,
