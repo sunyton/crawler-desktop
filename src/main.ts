@@ -8,7 +8,6 @@ import cheerio from 'cheerio';
 let mainWindow: Electron.BrowserWindow | null;
 
 type Info = {
-    asin: string;
     name: string;
     price: string;
     rate?: string;
@@ -16,6 +15,10 @@ type Info = {
     data?: string;
     days?: string;
 }
+
+type Infos = {
+    [key: string]: Info
+};
 
 ipcMain.on('url', (event: Event, msg: string) => {
     
@@ -39,22 +42,23 @@ const getAsinsByUrl = (url:string) => new Promise((resolve, reject) => {
           } else {
               const $ = cheerio.load(res.text);
             // console.log(res.text)
+                let infos: Infos = {};
               $('[data-asin][data-index]').each((i, ele) => {
+                  
                   const info: Info = {
-                      asin: '',
                       name: '',
                       price: ''
 
                   };
-                  const asin = $(ele).data().asin;
+                  const asin:string = $(ele).data().asin;
                   const name = $('[data-asin="'+asin+'"] h2').text().trim();
                   const price = $('[data-asin="'+asin+'"] [data-a-size="l"] .a-offscreen').text()
-                  info.asin = asin;
+                  
                   info.name = name;
                   info.price = price;
                     // getKeepa
                     // getOthers
-                  
+                  infos[asin] = info;
               })
           }
           
