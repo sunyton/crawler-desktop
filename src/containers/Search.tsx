@@ -10,6 +10,12 @@ export class Search extends React.Component<Props> {
 
     constructor (props: Props) {
         super(props)
+        ipcRenderer.on('infos', (event:Event, msg:string) => {
+            console.log(msg)
+        }) 
+        ipcRenderer.on('success-page', (event:Event, msg: number) => {
+            console.log(msg)
+        })
         bindAll(this, 'handleUrl')
     }
 

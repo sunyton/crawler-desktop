@@ -1,6 +1,7 @@
 const merge = require('webpack-merge')
 const baseConfig = require('./webpack.base.config')
 const path = require('path')
+const webpack = require('webpack')
 
 module.exports = merge(baseConfig, {
     mode: process.env.NODE_ENV,
@@ -20,5 +21,9 @@ module.exports = merge(baseConfig, {
                 loader: 'awesome-typescript-loader'
             }
         ]
-    }
+    },
+    plugins: 
+    [new webpack.DefinePlugin({ "global.GENTLY": false })]
+        
+    
 })
