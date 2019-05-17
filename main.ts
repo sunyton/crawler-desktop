@@ -1,11 +1,14 @@
 import { app, BrowserWindow, ipcMain, Event } from "electron";
 import * as puppeteer from 'puppeteer-core'
 import { Browser, Page } from 'puppeteer-core';
-import { CHROME_PATH, UA } from './constants/puppeteer';
+import { CHROME_PATH, UA } from './src/constants/puppeteer';
 import * as superagent from 'superagent';
 import * as cheerio from 'cheerio';
-
+import * as json2xls from 'json2xls'
 import * as fs from 'fs';
+import * as url from 'url'
+import * as path from 'path'
+
 let mainWindow: Electron.BrowserWindow | null;
 let testAsins:string[] = [];
 let infos: Infos = {};
@@ -17,6 +20,7 @@ type Info = {
     rank?: string;
     data?: string;
     days?: string;
+    asin?: string;
 }
 
 type Infos = {
@@ -30,15 +34,28 @@ ipcMain.on('url', (event: Event, msg: string) => {
     console.log(msg)
     get2(msg).then(mag => {
         console.log(mag)
-        event.sender.send('page', mag)
+        event.sender.send('main', mag)
+        
     })
 })
+
+ipcMain.on('down', (event: Event, msg: string) => {
+    let inf = [];
+    for (const asin in infos) {
+        infos[asin].asin = asin;
+        inf.push(infos[asin])
+    }
+    let xls = json2xls(inf);
+    fs.writeFileSync('data.xlsx', xls, 'binary');
+    // event.sender.send('main', 'ok')
+})
+
 
 const get2 = async (url: string) => {
         const asins:string[] = [];
         let res = null;
         try {
-            res = await superagent.get('https://www.amazon.com/s?me=A2IAB2RW3LLT8D'+'&page='+page)
+            res = await superagent.get(url+'&page='+page)
     // tslint:disable-next-line: max-line-length
         .set('user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36')
     // tslint:disable-next-line: max-line-length
@@ -85,67 +102,19 @@ const get2 = async (url: string) => {
 }
 
 
-// getAsins 
-const getAsinsByUrl = (url:string) => new Promise<string[]>((resolve, reject) => {
-    let asinst:string[] = [];
-    try {
-        superagent.get('https://www.amazon.com/s?me=A2IAB2RW3LLT8D')
-// tslint:disable-next-line: max-line-length
-      .set('user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36')
-// tslint:disable-next-line: max-line-length
-      .set('accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3')
-      .set('upgrade-insecure-requests', '1').timeout({
-                response: 5000,  // Wait 5 seconds for the server to start sending,
-                deadline: 10000, // but allow 1 minute for the file to finish loading.
-            })
-      .end((err, res) => {
-            fs.writeFileSync('asin.html', res.text)
-          if (err) {
-              console.log(err);
-              reject(err)
-          } else {
-              const $ = cheerio.load(res.text);
-            // console.log(res.text)
-              
-              $('[data-asin][data-index]').each((i, ele) => {
-                  
-                  const info: Info = {
-                      name: '',
-                      price: ''
 
-                  };
-                  const asin:string = $(ele).data().asin;
-                  asinst.push(asin)
-                  const name = $('[data-asin="'+asin+'"] h2').text().trim();
-                  const price = $('[data-asin="'+asin+'"] [data-a-size="l"] .a-offscreen').text()
-                  
-                  info.name = name;
-                  info.price = price;
-                    // getKeepa
-                    // getOthers
-                  infos[asin] = info;
-                  resolve(asinst)
-              })
-          }
-          
-      })
-    } catch (error) {
-        console.log(error)
-    }
-    
-})
 
 
 const getOthersByAsins = async (asins: string[]) => {
     const browser = await puppeteer.launch({
-        executablePath: CHROME_PATH,
+        executablePath: "C:\\Users\\pc\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe",
         headless: true
     });
     // const asins = Object.keys(infos)
     const page = await browser.newPage();
     let tmp:string[] = [];
     page.setJavaScriptEnabled(true);
-    page.setUserAgent(UA);
+    page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36');
     page.setViewport({width: 1100, height: 1080})
     for (let i = 0; i< asins.length; i++) {
         // superagent 
@@ -154,6 +123,7 @@ const getOthersByAsins = async (asins: string[]) => {
             await page.waitForSelector('.legendScale');    
             const days = await page.$$eval('.legendRange', ele => ele.length > 0 ? ele[ele.length-1].innerHTML.match(/\(([\s\S]*)\)/)![1] : '') ;
             console.log(await asins[i] + "  "  + days)
+            infos[asins[i]].days = days;
             const res = await superagent.get('https://www.amazon.com/dp/' + asins[i])
             // tslint:disable-next-line: max-line-length
             .set('user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36')
@@ -220,7 +190,11 @@ const createWindow = () => {
         autoHideMenuBar: true
 
     });
-    mainWindow.loadURL(`http://localhost:8081`);
+    mainWindow.loadURL(
+        url.format({
+            pathname: path.resolve(__dirname, './index.html'),
+            protocol: 'file:'
+        }));
     mainWindow.on('closed', () => {
         mainWindow = null;
     })

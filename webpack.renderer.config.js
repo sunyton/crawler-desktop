@@ -12,10 +12,7 @@ module.exports = merge.smart(baseConfig, {
         rules: [
             {
                 test: /\.tsx?$/,
-                include: [path.resolve(__dirname, 'src')],
-                exclude: [path.resolve(__dirname, 'src/main.ts'),
-                            path.resolve(__dirname, 'src/controllers')
-                ],
+                include: [path.resolve(__dirname, './src')],
                 loader: 'awesome-typescript-loader',
                 options: {
                     "useBabel": true,

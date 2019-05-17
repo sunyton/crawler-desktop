@@ -38,11 +38,12 @@ var _this = this;
 exports.__esModule = true;
 var electron_1 = require("electron");
 var puppeteer = require("puppeteer-core");
-var puppeteer_1 = require("./constants/puppeteer");
 var superagent = require("superagent");
 var cheerio = require("cheerio");
 var json2xls = require("json2xls");
 var fs = require("fs");
+var url = require("url");
+var path = require("path");
 var mainWindow;
 var testAsins = [];
 var infos = {};
@@ -133,7 +134,7 @@ var getOthersByAsins = function (asins) { return __awaiter(_this, void 0, void 0
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, puppeteer.launch({
-                    executablePath: puppeteer_1.CHROME_PATH,
+                    executablePath: "C:\\Users\\pc\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe",
                     headless: true
                 })];
             case 1:
@@ -143,7 +144,7 @@ var getOthersByAsins = function (asins) { return __awaiter(_this, void 0, void 0
                 page = _a.sent();
                 tmp = [];
                 page.setJavaScriptEnabled(true);
-                page.setUserAgent(puppeteer_1.UA);
+                page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36');
                 page.setViewport({ width: 1100, height: 1080 });
                 _loop_1 = function (i) {
                     var days, _a, _b, res, $_1, a, b, date, error_2;
@@ -236,7 +237,10 @@ var createWindow = function () {
         },
         autoHideMenuBar: true
     });
-    mainWindow.loadURL("http://localhost:8081");
+    mainWindow.loadURL(url.format({
+        pathname: path.resolve(__dirname, './index.html'),
+        protocol: 'file:'
+    }));
     mainWindow.on('closed', function () {
         mainWindow = null;
     });
